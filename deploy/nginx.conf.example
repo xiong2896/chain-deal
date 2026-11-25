@@ -1,0 +1,25 @@
+# 前端静态资源部署示例（Nginx）
+# 用法：把本文件内容合并到你自己的 nginx.conf 的 http { } 块内，
+#      并把 root 改成 frontend 目录在你机器上的实际路径。
+
+server {
+    listen       8080;
+    server_name  localhost;
+
+    # 前端静态页面
+    location / {
+        root   /path/to/chain-deal/frontend;
+        index  index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # 接口反向代理：/api/xxx -> http://127.0.0.1:8081/xxx
+    location /api {
+        default_type              application/json;
+        proxy_http_version        1.1;
+        rewrite                   /api(/.*) $1 break;
+        proxy_pass_request_headers on;
+        proxy_next_upstream       error timeout;
+        proxy_pass                http://127.0.0.1:8081;
+    }
+}

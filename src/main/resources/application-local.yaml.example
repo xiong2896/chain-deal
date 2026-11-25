@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/chaindeal?useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 你的MySQL密码
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: 你的Redis密码
