@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity=".34"/>
+      <stop offset="55%" stop-color="#0B1220" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#6366F1" stop-opacity=".20"/>
+    </linearGradient>
+    <radialGradient id="r" cx="50%" cy="18%" r="72%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity=".38"/>
+      <stop offset="100%" stop-color="#6366F1" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="p" width="26" height="26" patternUnits="userSpaceOnUse">
+      <path d="M26 0 H0 V26" fill="none" stroke="#6366F1" stroke-opacity=".12" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="400" fill="#080D18"/>
+  <rect width="400" height="400" fill="url(#g)"/>
+  <rect width="400" height="400" fill="url(#p)"/>
+  <rect width="400" height="400" fill="url(#r)"/>
+  <circle cx="200" cy="196" r="104" fill="none" stroke="#6366F1" stroke-opacity=".26" stroke-width="1.5"/>
+  <text x="200" y="238" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif"
+        font-size="112" font-weight="700" fill="#6366F1" fill-opacity=".9">欧</text>
+  <text x="200" y="316" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif"
+        font-size="19" fill="#E6EDF7" fill-opacity=".62" letter-spacing="6">KTV</text>
+</svg>

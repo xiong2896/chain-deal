@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的 · 链享团购</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+  .me-card{
+    display:flex;align-items:center;gap:18px;padding:26px 28px;margin:24px 0 18px;
+    border-radius:18px;border:1px solid var(--line);position:relative;overflow:hidden;
+    background:linear-gradient(135deg,rgba(45,212,191,.12),rgba(124,58,237,.12) 62%,rgba(13,20,33,.6));
+    backdrop-filter:blur(12px);
+  }
+  .me-card::before{
+    content:"";position:absolute;right:-70px;top:-80px;width:230px;height:230px;border-radius:50%;
+    background:radial-gradient(circle,rgba(45,212,191,.26),transparent 68%);
+  }
+  .avatar{
+    width:76px;height:76px;border-radius:20px;flex:0 0 76px;overflow:hidden;
+    border:1px solid rgba(45,212,191,.4);box-shadow:0 0 26px rgba(45,212,191,.3);
+    background:linear-gradient(135deg,rgba(45,212,191,.2),rgba(124,58,237,.24));
+    display:flex;align-items:center;justify-content:center;
+    font-size:30px;font-weight:700;color:var(--cyan);position:relative;
+  }
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+  .me-info{position:relative;flex:1;min-width:0}
+  .me-name{font-size:21px;font-weight:700;letter-spacing:.5px;margin-bottom:6px}
+  .me-sub{font-size:12.5px;color:var(--sub);display:flex;gap:14px;flex-wrap:wrap}
+  .me-sub b{color:var(--cyan);font-weight:600}
+  .me-actions{display:flex;gap:10px;margin-top:12px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .sign-box{display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .sign-num{font-size:28px;font-weight:700;color:var(--cyan);text-shadow:0 0 20px rgba(45,212,191,.45)}
+  .sign-num small{font-size:12px;color:var(--sub);font-weight:400;margin-left:3px;text-shadow:none}
+  .rows .r{display:flex;justify-content:space-between;font-size:13px;color:var(--sub);padding:11px 0;border-bottom:1px solid var(--line-2)}
+  .rows .r:last-child{border-bottom:0}
+  .rows .r b{color:var(--text);font-weight:500}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}.me-card{padding:20px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back-btn" href="index.html"><span class="arw">‹</span> 返回门店列表</a>
+    <span class="spacer"></span>
+    <a class="u-link" href="javascript:;" onclick="logout()">退出登录</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="me"><div class="loading">加载中</div></section>
+</main>
+
+<script src="assets/app.js"></script>
+<script>
+function relogin(){
+  clearToken();
+  location.href = 'login.html';
+}
+
+function logout(){
+  clearToken();
+  toast('已退出登录');
+  setTimeout(()=>location.href='login.html', 400);
+}
+
+async function load(){
+  const box = document.getElementById('me');
+  if (!getToken()) { location.href = 'login.html?from=profile.html'; return; }
+
+  let u = null, err = '';
+  try { u = await req('/user/me'); } catch (e) { err = e.message; }
+
+  if (!u) {
+    clearToken();
+    box.innerHTML = `<div class="empty"><span class="big">⚠️</span>登录已失效，请重新登录
+      <div style="margin-top:18px"><button class="btn" onclick="relogin()">去登录</button></div></div>`;
+    return;
+  }
+
+  const initial = esc((u.nickName || 'U').charAt(0));
+  const avatar = u.icon
+    ? `<img src="${esc(u.icon)}" alt="" onerror="this.style.display='none';this.parentNode.innerHTML='${initial}'">`
+    : initial;
+
+  box.innerHTML = `
+    <div class="me-card">
+      <div class="avatar">${avatar}</div>
+      <div class="me-info">
+        <div class="me-name">${esc(u.nickName || '用户')}</div>
+        <div class="me-sub">
+          <span>用户 ID <b>${esc(u.id)}</b></span>
+          <span>会员等级 <b>普通会员</b></span>
+        </div>
+        <div class="me-actions">
+          <a class="btn ghost" href="index.html">去逛门店</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="cols">
+      <div class="sect">
+        <h2>每日签到</h2>
+        <div class="sign-box">
+          <div>
+            <div class="sign-num" id="signCnt">—<small>天</small></div>
+            <div style="font-size:12.5px;color:var(--dim);margin-top:2px">本月连续签到</div>
+          </div>
+          <button class="btn" id="signBtn" onclick="doSign()">签到</button>
+        </div>
+      </div>
+
+      <div class="sect">
+        <h2>账号信息</h2>
+        <div class="rows">
+          <div class="r"><span>昵称</span><b>${esc(u.nickName || '—')}</b></div>
+          <div class="r"><span>用户 ID</span><b>${esc(u.id)}</b></div>
+          <div class="r"><span>登录状态</span><b style="color:var(--cyan)">已登录</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h2>我的套餐券</h2>
+      <div class="empty" style="padding:34px 0">
+        <span class="big">🎫</span>暂未查询到你的券<br>
+        <span style="font-size:12px;color:var(--dim)">（订单查询接口尚未开放，抢购后可在订单表核对）</span>
+      </div>
+    </div>`;
+
+  loadSignCount();
+}
+
+async function loadSignCount(){
+  try {
+    const c = await req('/user/sign/count');
+    document.getElementById('signCnt').innerHTML = (c == null ? 0 : c) + '<small>天</small>';
+    // 连续签到天数从今天往回数：大于 0 说明今天已签到
+    setSignBtn(c > 0);
+  } catch(e){ /* 忽略 */ }
+}
+
+// 已签到时按钮置灰并显示“已签到”
+function setSignBtn(signed){
+  const btn = document.getElementById('signBtn');
+  if (!btn) return;
+  btn.disabled = signed;
+  btn.textContent = signed ? '已签到' : '签到';
+  btn.classList.toggle('ghost', signed);
+}
+
+async function doSign(){
+  const btn = document.getElementById('signBtn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  try {
+    const already = await req('/user/sign', { method: 'PUT' });
+    toast(already ? '今天已经签过到了' : '签到成功');
+    setSignBtn(true);
+    await loadSignCount();
+  } catch (e) {
+    toast(e.message);
+    btn.disabled = false;
+  }
+}
+
+load();
+</script>
+</body>
+</html>

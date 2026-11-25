@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>门店详情 · 链享团购</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="back-btn" href="index.html"><span class="arw">‹</span> 返回门店列表</a>
+    <span class="spacer"></span>
+    <a class="u-link" href="javascript:;" onclick="goMine()">我的</a>
+    <a class="u-link" href="index.html">首页</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="detail"><div class="loading">加载中</div></section>
+</main>
+
+<script src="assets/app.js"></script>
+<script>
+const shopId = qs('id');
+function goMine(){ location.href = getToken() ? 'profile.html' : 'login.html?from=' + encodeURIComponent(location.href.split('/').pop()); }
+const yuan = v => v == null ? '—' : (Number(v) / 100).toFixed(0);
+
+async function load() {
+  const box = document.getElementById('detail');
+  if (!shopId) {
+    box.innerHTML = '<div class="empty"><span class="big">⚠️</span>缺少门店 id</div>';
+    return;
+  }
+  try {
+    const s = await req('/shop/' + shopId);
+    const score = fmtScore(s.score);
+    box.innerHTML = `
+      <div class="hero">
+        <h1>${esc(s.name)}</h1>
+        <div class="meta">
+          ${score ? `<span class="big-score">${score} 分</span>` : '<span class="big-score">暂无评分</span>'}
+          人均 ¥${s.avgPrice || '—'} · 已售 ${s.sold || 0}
+        </div>
+        <div class="meta">${esc(s.area || '')}${esc(s.address || '')}</div>
+        <div class="meta">营业时间 ${esc(s.openHours || '—')}</div>
+      </div>
+
+      <div class="sect">
+        <h2>门店套餐</h2>
+        <div id="vouchers"><div class="loading">加载中</div></div>
+      </div>
+
+      <div class="sect">
+        <h2>门店信息</h2>
+        <div class="kv"><b>地址</b><span>${esc(s.address || '—')}</span></div>
+        <div class="kv"><b>商圈</b><span>${esc(s.area || '—')}</span></div>
+        <div class="kv"><b>电话</b><span>${esc(s.phone || '—')}</span></div>
+        <div class="kv"><b>营业</b><span>${esc(s.openHours || '—')}</span></div>
+      </div>`;
+    loadVouchers();
+  } catch (e) {
+    box.innerHTML = `<div class="empty"><span class="big">⚠️</span>加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+async function loadVouchers() {
+  const box = document.getElementById('vouchers');
+  try {
+    const list = await req('/voucher/list/' + shopId);
+    if (!list || !list.length) {
+      box.innerHTML = '<div class="empty" style="padding:26px 0">该门店暂无可抢套餐</div>';
+      return;
+    }
+    box.innerHTML = list.map(v => {
+      const isSeckill = v.type === 1;
+      const soldOut = isSeckill && v.stock != null && v.stock <= 0;
+      return `<div class="voucher">
+        <div class="v-info">
+          <div class="v-title">${esc(v.title)}</div>
+          <div class="v-sub">${esc(v.subTitle || '到店核销，不可与其他优惠同享')}</div>
+          <div class="v-money">
+            <span class="v-price">¥${yuan(v.payValue)}</span>
+            <span class="v-old">¥${yuan(v.actualValue)}</span>
+            ${isSeckill ? `<span class="v-stock">限量 ${v.stock == null ? '—' : v.stock} 份</span>` : ''}
+          </div>
+        </div>
+        <button class="btn" ${soldOut ? 'disabled' : ''} onclick="buy(${v.id})">
+          ${soldOut ? '已抢光' : (isSeckill ? '立即抢购' : '领取')}
+        </button>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    box.innerHTML = `<div class="empty" style="padding:26px 0">套餐加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+async function buy(voucherId) {
+  if (!requireLogin()) return;
+  const btn = event && event.target ? event.target : null;
+  if (btn) { btn.disabled = true; btn.textContent = '抢购中…'; }
+  try {
+    const orderId = await req('/voucher-order/seckill/' + voucherId, { method: 'POST' });
+    toast('抢购成功，订单号 ' + orderId);
+    setTimeout(loadVouchers, 900);
+  } catch (e) {
+    toast(e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '立即抢购'; }
+  }
+}
+
+load();
+</script>
+</body>
+</html>
